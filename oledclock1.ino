@@ -33,6 +33,11 @@ static const unsigned char PROGMEM logo_bmp[] =
   0b11111111, 0b11111111 
 };
 
+// MUST BE BETWEEN 0 AND 59 INCLUSIVELY. 
+int hours = 16;
+int minutes = 23;
+int seconds = 30;
+
 void setup() {
   Serial.begin(9600);
   Wire.begin(21, 22);                  // explicitly init I2C
@@ -42,7 +47,7 @@ void setup() {
   }
 
   display.clearDisplay();
-  display.setTextSize(1);
+  display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0,0);
   display.println(F("BOOT OK"));
@@ -54,11 +59,14 @@ void setup() {
 }
 
 void loop() {
+  timeTicking();
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println(F("Hello, World!"));
+  display.println(F("OLED Clock"));
+  display.setCursor(0, 20);
+  display.println( timeFormatter() );
   display.display();
-  delay(500);
+  delay(990);
 }
 
 void drawLogo() {
@@ -70,4 +78,42 @@ void drawLogo() {
     logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
   display.display();
   delay(2000);
+}
+
+void timeTicking() {
+  seconds = seconds+1;
+  if (seconds >= 60) {
+    seconds = 0;
+    minutes = minutes+1;
+    if (minutes >= 60) {
+      minutes = 0;
+      hours = hours+1;
+      if (hours >= 24) {
+        hours = 0;
+      }
+    }
+  }
+}
+
+String timeFormatter() {
+  String h, m, s;
+  if (seconds < 10) {
+    s = "0"+String(seconds);
+  } else {
+    s = String(seconds);
+  }
+
+  if (minutes < 10) {
+    m = "0"+String(minutes);
+  } else {
+    m = String(minutes);
+  }
+
+  if (hours < 10) {
+    h = "0"+String(hours);
+  } else {
+    h = String(hours);
+  }
+  
+  return h+":"+m+":"+s;
 }
