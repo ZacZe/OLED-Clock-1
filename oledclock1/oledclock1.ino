@@ -34,9 +34,12 @@ static const unsigned char PROGMEM logo_bmp[] =
 };
 
 // MUST BE BETWEEN 0 AND 59 INCLUSIVELY. 
+/*
 int hours = 16;
 int minutes = 23;
 int seconds = 30;
+*/
+int currentTime = seconds+(minutes*60)+(hours*3600);
 
 void setup() {
   Serial.begin(9600);
@@ -66,7 +69,8 @@ void loop() {
   display.setCursor(0, 20);
   display.println( timeFormatter() );
   display.display();
-  delay(990);
+
+  delay(973);
 }
 
 void drawLogo() {
@@ -81,18 +85,10 @@ void drawLogo() {
 }
 
 void timeTicking() {
-  seconds = seconds+1;
-  if (seconds >= 60) {
-    seconds = 0;
-    minutes = minutes+1;
-    if (minutes >= 60) {
-      minutes = 0;
-      hours = hours+1;
-      if (hours >= 24) {
-        hours = 0;
-      }
-    }
-  }
+  currentTime = millis() / 1000; // total seconds since start
+  hours = (currentTime / 3600) % 24;
+  minutes = (currentTime / 60) % 60;
+  seconds = currentTime % 60;
 }
 
 String timeFormatter() {
