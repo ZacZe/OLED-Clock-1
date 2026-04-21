@@ -34,12 +34,20 @@ static const unsigned char PROGMEM logo_bmp[] =
 };
 
 // MUST BE BETWEEN 0 AND 59 INCLUSIVELY. 
-/*
 int hours = 16;
 int minutes = 23;
 int seconds = 30;
-*/
 int currentTime = seconds+(minutes*60)+(hours*3600);
+
+// WEATHER STUFF
+String location = "London";
+String temperature = "15*C";
+String weather = "Cloudy";
+
+// SCROLLING TRIX
+int scroll = 0;
+int scrollFactor = 2;
+
 
 void setup() {
   Serial.begin(9600);
@@ -64,10 +72,11 @@ void setup() {
 void loop() {
   timeTicking();
   display.clearDisplay();
-  display.setCursor(0,0);
-  display.println(F("OLED Clock"));
-  display.setCursor(0, 20);
-  display.println( timeFormatter() );
+
+  drawWeatherReport();
+
+  drawTime();
+
   display.display();
 
   delay(973);
@@ -82,6 +91,17 @@ void drawLogo() {
     logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
   display.display();
   delay(2000);
+}
+
+void drawWeatherReport() {
+  display.setCursor(0,0);
+  display.println( weatherRFormatter() );
+  display.startscrollright(0x00, 0x01);
+}
+
+void drawTime() {
+  display.setCursor(0, 20);
+  display.println( timeFormatter() );
 }
 
 void timeTicking() {
@@ -112,4 +132,8 @@ String timeFormatter() {
   }
   
   return h+":"+m+":"+s;
+}
+
+String weatherRFormatter() {
+  return location + "  |  " + weather + "  |  " + temperature;
 }
