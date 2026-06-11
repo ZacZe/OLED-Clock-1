@@ -1,4 +1,3 @@
-#include <SPI.h>
 #include <Wire.h>
 #include <math.h>
 #include <WiFi.h>
@@ -6,20 +5,31 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define builtin_led 2 
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
-#define SCREEN_WIDTH 128 // width
-#define SCREEN_HEIGHT 64 // height
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C
 
-#define OLED_RESET -1 // reset pin
-#define SCREEN_ADDRESS 0x3C // 0x3C, not 0x3D ever!!!!
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+// ---- TIME ----
+int hours = 0;
+int minutes = 0;
+int seconds = 0;
+unsigned long currentTime = 0;
+
+// ---- FAKE WEATHER ----
+String location = "London";
+String temperature = "15*C";
+String weather = "Cloudy";
+
+// ---- LOGO ----
 #define LOGO_HEIGHT 15
 #define LOGO_WIDTH 16
 
-static const unsigned char PROGMEM logo_bmp[] =
-{ 0b11111111, 0b11111111,
+static const unsigned char PROGMEM logo_bmp[] = {
+  0b11111111, 0b11111111,
   0b11111111, 0b11111111,
   0b11111111, 0b11111111,
   0b00000000, 0b11100111,
@@ -33,7 +43,7 @@ static const unsigned char PROGMEM logo_bmp[] =
   0b11100111, 0b00000000,
   0b11111111, 0b11111111,
   0b11111111, 0b11111111,
-  0b11111111, 0b11111111 
+  0b11111111, 0b11111111
 };
 
 // MUST BE BETWEEN 0 AND 59 INCLUSIVELY. 
@@ -58,19 +68,21 @@ bool parseWeatherResponse(const String& response);
 
 void setup() {
   Serial.begin(9600);
-  Wire.begin(21, 22);                  // explicitly init I2C
-  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 failed"));
-    while(1);
+
+  Wire.begin(21, 22);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println("OLED failed");
+    while (true);
   }
 
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0,0);
-  display.println(F("BOOT OK"));
-  display.setCursor(2,0);
-  display.println(F("I/O OK"));
+
+  display.setCursor(0, 0);
+  display.println("BOOT OK");
+  display.println("SYSTEM READY");
   display.display();
 
   drawLogo(); 
@@ -107,13 +119,19 @@ void loop() {
   delay(990);
 }
 
+// ---------- LOGO ----------
 void drawLogo() {
   display.clearDisplay();
 
   display.drawBitmap(
-    (display.width()  - LOGO_WIDTH ) / 2,
-    (display.height() - LOGO_HEIGHT) / 2,
-    logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
+    (SCREEN_WIDTH - LOGO_WIDTH) / 2,
+    (SCREEN_HEIGHT - LOGO_HEIGHT) / 2,
+    logo_bmp,
+    LOGO_WIDTH,
+    LOGO_HEIGHT,
+    SSD1306_WHITE
+  );
+
   display.display();
   delay(2000);
 }
@@ -133,27 +151,18 @@ void timeTicking() {
   }
 }
 
-String timeFormatter() {
-  String h, m, s;
-  if (seconds < 10) {
-    s = "0"+String(seconds);
-  } else {
-    s = String(seconds);
-  }
+String formatTime() {
+  char buffer[9];
+  sprintf(buffer, "%02d:%02d:%02d", hours, minutes, seconds);
+  return String(buffer);
+}
 
-  if (minutes < 10) {
-    m = "0"+String(minutes);
-  } else {
-    m = String(minutes);
-  }
-
-  if (hours < 10) {
-    h = "0"+String(hours);
-  } else {
-    h = String(hours);
-  }
-  
-  return h+":"+m+":"+s;
+// ---------- UI ----------
+void drawTime() {
+  display.setCursor(0, 20);
+  display.setTextSize(2);
+  display.println(formatTime());
+  display.setTextSize(1);
 }
 
 void connectToWifi() {
